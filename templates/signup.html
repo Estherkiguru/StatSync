@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - StatSync</title>
+    <style>
+        /* Your CSS styles here */
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>Sign Up - StatSync</h2>
+        <form method="post" action="/signup">
+            <input type="text" name="first_name" placeholder="First Name" value="{{ signup_form.first_name }}" required>
+            <input type="text" name="last_name" placeholder="Last Name" value="{{ signup_form.last_name }}" required>
+            <select name="gender" required>
+                <option value="" disabled {% if not signup_form.gender %}selected{% endif %}>Gender</option>
+                <option value="male" {% if signup_form.gender == 'male' %}selected{% endif %}>Male</option>
+                <option value="female" {% if signup_form.gender == 'female' %}selected{% endif %}>Female</option>
+                <option value="other" {% if signup_form.gender == 'other' %}selected{% endif %}>Other</option>
+            </select>
+            <input type="number" name="age" placeholder="Age" value="{{ signup_form.age }}" required>
+            <input type="date" name="date_of_birth" placeholder="Date of Birth" value="{{ signup_form.date_of_birth }}" required>
+            <input type="text" name="residence" placeholder="Residence" value="{{ signup_form.residence }}" required>
+            <input type="text" name="username" placeholder="Username" value="{{ signup_form.username }}" required>
+            <input type="email" name="email" placeholder="Email" value="{{ signup_form.email }}" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <input type="password" name="confirm_password" placeholder="Confirm Password" required>
+            <button type="submit">Sign Up</button>
+        </form>
+
+        <hr>
+
+        <p>Already have an account? <a href="/login">Login</a></p>
+
+        {% if error %}
+            <ul class="flashes">
+                <li>{{ error }}</li>
+            </ul>
+        {% endif %}
+    </div>
+</body>
+</html>
