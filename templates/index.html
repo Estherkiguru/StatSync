@@ -50,6 +50,11 @@
             display: flex;
             justify-content: center;
             gap: 20px;
+            margin-top: 20px;
+        }
+
+        .button-section {
+            margin-bottom: 20px;
         }
     </style>
 </head>
@@ -59,14 +64,30 @@
         <h1>Welcome to StatSync</h1>
         <p>Manage athlete stats efficiently with our platform.</p>
 
-        <div class="button-group">
-            <form action="/login" method="get">
-                <button type="submit">Login</button>
-            </form>
+        <!-- Athlete Section -->
+        <div class="button-section">
+            <h3>Athletes</h3>
+            <div class="button-group">
+                <form action="/login" method="get">
+                    <button type="submit">Athlete Login</button>
+                </form>
+                <form action="/signup" method="get">
+                    <button type="submit">Athlete Sign Up</button>
+                </form>
+            </div>
+        </div>
 
-            <form action="/signup" method="get">
-                <button type="submit">Sign Up</button>
-            </form>
+        <!-- Trainer Section -->
+        <div class="button-section">
+            <h3>Trainers</h3>
+            <div class="button-group">
+                <form action="/trainer/login" method="get">
+                    <button type="submit">Trainer Login</button>
+                </form>
+                <form action="/trainer/signup" method="get">
+                    <button type="submit">Trainer Sign Up</button>
+                </form>
+            </div>
         </div>
     </div>
 </body>
