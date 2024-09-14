@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from db import engine, Base
 from controller import router as api_router
 from fastapi.staticfiles import StaticFiles
+from models import Athlete, Trainer
 
 # Initialize FastAPI app
 StatSync = FastAPI()
