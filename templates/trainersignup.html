@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - StatSync</title>
+    <style>
+        /* Your existing styles */
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Sign Up - StatSync</h2>
+        <form method="post" action="/trainer/signup">
+            <input type="text" name="first_name" placeholder="First Name" required>
+            <input type="text" name="last_name" placeholder="Last Name" required>
+            <select name="gender" required>
+                <option value="" disabled selected>Gender</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+            </select>
+            <input type="date" name="date_of_birth" placeholder="Date of Birth" required>
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="email" name="email" placeholder="Email" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <input type="password" name="confirm_password" placeholder="Confirm Password" required>
+            <button type="submit">Sign Up</button>
+        </form>
+
+        <hr>
+
+        <p>Already have an account? <a href="/trainer/login">Login</a></p>
+
+        {% if error %}
+            <ul class="flashes">
+                <li>{{ error }}</li>
+            </ul>
+        {% endif %}
+    </div>
+</body>
+</html>
