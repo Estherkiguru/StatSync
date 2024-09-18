@@ -1,8 +1,8 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta, timezone
-from jose import JWTError, jwt
+from jose import JWTError, jwt, ExpiredSignatureError
 from passlib.context import CryptContext
 
 from db import get_db
@@ -32,14 +32,14 @@ def get_password_hash(password: str) -> str:
 
 
 # Utility function to create JWT token
-def create_access_token(data: dict, expires_delta: timedelta = None) -> str:
+def create_access_token(data: dict, expires_delta: timedelta = None):
     to_encode = data.copy()
     if expires_delta:
-        expire =  datetime.now(timezone.utc)+ expires_delta
-    else:
-        expire =  datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+        expire = datetime.now(timezone.utc) + expires_delta
+        to_encode.update({"exp": expire})
+
+    # Generate the encoded JWT
+    encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 
 
@@ -58,43 +58,74 @@ def authenticate_user(db: Session, username: str, password: str, role: str):
 
 
 # Dependency to get current user based on JWT token
-async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+async def get_current_user(request: Request, role_type: str, db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    
+    # Get the token from the cookies
+    token_key = "athlete_access_token" if role_type == "athlete" else "trainer_access_token"
+    token = request.cookies.get(token_key)
+
+    if not token:
+        print("No access token found in cookies.")
+        raise credentials_exception
+    
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        # Decode the JWT token
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+
+        # Extract user data
         username: str = payload.get("sub")
         role: str = payload.get("role")
-        if username is None or role is None:
+
+
+        # Debugging: Print out the extracted data
+        print(f"Decoded JWT - Username: {username}, Role: {role}")
+
+        if username is None or role is None or role != role_type:
             raise credentials_exception
-    except JWTError:
+        return username, role
+  
+    except JWTError as e:
+        print(f"JWT Error: {str(e)}")
         raise credentials_exception
-
-    if role == "athlete":
-        user = db.query(Athlete).filter(Athlete.username == username).first()
-    elif role == "trainer":
-        user = db.query(Trainer).filter(Trainer.username == username).first()
-    else:
-        raise credentials_exception
-
-    if user is None:
-        raise credentials_exception
-    return user
-
 
 # Dependency to get current authenticated athlete
-async def get_current_athlete(current_user: Athlete = Depends(get_current_user)):
-    if not isinstance(current_user, Athlete):
+async def get_current_athlete(request: Request, db: Session = Depends(get_db)):
+    # Get the username and role from the athlete JWT token
+    username, role = await get_current_user(request, "athlete", db)
+
+    
+    # Ensure the user is an athlete
+    if role != "athlete":
         raise HTTPException(status_code=403, detail="Not authorized as athlete")
-    return current_user
+
+    # Fetch the athlete from the database using the username
+    athlete = db.query(Athlete).filter(Athlete.username == username).first()
+    
+    if not athlete:
+        raise HTTPException(status_code=404, detail="Athlete not found")
+
+    return athlete
 
 
 # Dependency to get current authenticated trainer
-async def get_current_trainer(current_user: Trainer = Depends(get_current_user)):
-    if not isinstance(current_user, Trainer):
+async def get_current_trainer(request: Request, db: Session = Depends(get_db)):
+    # Get username and role from JWT token
+    username, role = await get_current_user(request, "trainer", db)
+
+    # Ensure the user is a trainer
+    if role != "trainer":
         raise HTTPException(status_code=403, detail="Not authorized as trainer")
-    return current_user
+
+    # Fetch the trainer's data from the database
+    trainer = db.query(Trainer).filter(Trainer.username == username).first()
+    
+    if not trainer:
+        raise HTTPException(status_code=404, detail="Trainer not found")
+
+    return trainer
 
