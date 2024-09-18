@@ -1,9 +1,12 @@
 """
 handles API endpoints related to user authentication
 """
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, Cookie, Form
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from io import BytesIO
 from db import get_db
 from forms import LoginForm, SignUpForm
 from fastapi.responses import JSONResponse
@@ -12,9 +15,12 @@ from bcrypt import hashpw, gensalt
 from fastapi.templating import Jinja2Templates
 from datetime import timedelta, date
 from trainers_forms import TrainerSignUpForm, TrainerLoginForm
-from auth import authenticate_user, create_access_token, get_current_user, get_current_athlete, get_current_trainer
+from auth import SECRET_KEY, ALGORITHM, authenticate_user, create_access_token, get_current_user, get_current_athlete, get_current_trainer
 from pydantic import BaseModel
 from typing import Optional
+from jose import jwt, JWTError
+from config import settings 
+
 
 router = APIRouter()
 
@@ -33,19 +39,29 @@ async def login_page(request: Request):
 
 # Login endpoint for an athlete
 @router.post("/login")
-async def login(request: Request, form_data: LoginForm = Depends(LoginForm.as_form), db: Session = Depends(get_db)):
+async def login(response: Response, request: Request, form_data: LoginForm = Depends(LoginForm.as_form), db: Session = Depends(get_db)):
     user = authenticate_user(db, form_data.username, form_data.password, role="athlete")
     if not user:
         return templates.TemplateResponse("login.html", {"request": request, "form": form_data, "error": "Invalid credentials"})
 
-    access_token_expires = timedelta(minutes=30) 
-    access_token = create_access_token(data={"sub": user.username, "role": "athlete"}, expires_delta=access_token_expires)
-    
-    # Redirect to athlete dashboard after successful login
-    return JSONResponse(
-        content={"access_token": access_token, "redirect_url": f"/athlete/{user.id}"},
-        status_code=200
+    access_token = create_access_token(data={"sub": user.username, "role": "athlete"})
+
+    # Debugging: Print the generated token
+    print(f"Generated JWT Token for athlete: {access_token}")
+
+    response = RedirectResponse(url="/dashboard", status_code=302)
+    response.set_cookie(
+        key="athlete_access_token",
+        value=access_token,
+        httponly=True,
+        #max_age=2880 * 60,
+        #expires=2880 * 60,
+        samesite="Lax",
+        secure=False 
     )
+    return response
+    #return RedirectResponse(url="/dashboard", status_code=302)
+
 
 # Route for the signup page
 @router.get("/signup", response_class=HTMLResponse)
@@ -118,20 +134,30 @@ async def trainer_login_page(request: Request):
 
 # Login endpoint for a trainer
 @router.post("/trainer/login")
-async def trainer_login(request: Request, form_data: TrainerLoginForm = Depends(TrainerLoginForm.as_form), db: Session = Depends(get_db)):
+async def trainer_login(request: Request, response = Response, form_data: TrainerLoginForm = Depends(TrainerLoginForm.as_form), db: Session = Depends(get_db)):
+    # Authenticate the trainer
     user = authenticate_user(db, form_data.username, form_data.password, role="trainer")
 
     if not user:
         return templates.TemplateResponse("trainerlogin.html", {"request": request, "form": form_data, "error": "Invalid credentials"})
 
-    access_token_expires = timedelta(minutes=30) 
-    access_token = create_access_token(data={"sub": user.username, "role": "trainer"}, expires_delta=access_token_expires)
+    # Create the access token if authentication succeeds
+    #access_token_expires = timedelta(minutes=30) 
+    access_token = create_access_token(data={"sub": user.username, "role": "trainer"})
     
-    # Redirect to the list of athletes after successful login
-    return JSONResponse(
-        content={"access_token": access_token, "redirect_url": "/athletes"},
-        status_code=200
+    # Create a redirect response and set the access token in the cookies
+    response = RedirectResponse(url="/trainer/dashboard", status_code=302)
+    response.set_cookie(
+        key="trainer_access_token",
+        value=access_token,
+        httponly=True,
+        #max_age=2880 * 60,
+        #expires=2880 * 60,
+        samesite="Lax",
+        secure=False 
     )
+    # Redirect to the trainers dashboard after successful login
+    return response
 
 # Route for the Trainer signup page
 @router.get("/trainer/signup", response_class=HTMLResponse)
@@ -241,8 +267,11 @@ async def get_athlete(
         return JSONResponse(content={"error": "Unauthorized"}, status_code=401)
 
     return {
+        "id": athlete.id,
         "first_name": athlete.first_name,
         "last_name": athlete.last_name,
+        "date_of_birth": athlete.date_of_birth,
+        "email": athlete.email,
         "body_weight": athlete.body_weight,
         #"height": athlete.height,
         "bmr": athlete.bmr,
@@ -251,7 +280,6 @@ async def get_athlete(
         "muscle_mass": athlete.muscle_mass,
         "residence": athlete.residence,
         "gender": athlete.gender,
-        "date_of_birth": athlete.date_of_birth
     }
 
 # Define the Pydantic model for the request body
@@ -304,4 +332,146 @@ async def update_athlete(
             "date_of_birth": athlete.date_of_birth
         }
     }
- 
+
+# Endpoint for Athlete dashboard
+@router.get("/dashboard", response_class=HTMLResponse)
+async def athlete_dashboard(request: Request, db: Session = Depends(get_db)):
+    access_token = request.cookies.get("athlete_access_token")
+    
+    if not access_token:
+        raise HTTPException(status_code=401, detail="Unauthorized: No token found")
+    
+    try:
+        payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
+        
+        username: str = payload.get("sub")
+        role: str = payload.get("role")
+        
+        if username is None or role != "athlete":
+            raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    except JWTError as e:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    # Fetch the current athlete's data based on the username in the token
+    athlete = db.query(Athlete).filter(Athlete.username == username).first()
+    if not athlete:
+        raise HTTPException(status_code=404, detail="Athlete not found")
+
+    # Render the dashboard HTML template for athletes
+    return templates.TemplateResponse("dashboard.html", {"request": request, "athlete": athlete})
+
+@router.get("/download-stats", response_class=Response)
+async def download_stats(request: Request, db: Session = Depends(get_db), current_athlete: Athlete = Depends(get_current_athlete)):
+    # Create a PDF buffer in memory
+    buffer = BytesIO()
+
+    # Create the PDF object, using the buffer as its "file."
+    pdf = canvas.Canvas(buffer, pagesize=letter)
+
+    # Write content on the PDF
+    pdf.drawString(100, 750, f"First Name: {current_athlete.first_name}")
+    pdf.drawString(100, 730, f"Last Name: {current_athlete.last_name}")
+    pdf.drawString(100, 710, f"Date of Birth: {current_athlete.date_of_birth}")
+    pdf.drawString(100, 690, f"Email: {current_athlete.email}")
+    pdf.drawString(100, 670, f"Body Weight: {current_athlete.body_weight}")
+    pdf.drawString(100, 650, f"BMR: {current_athlete.bmr}")
+    pdf.drawString(100, 630, f"Age: {current_athlete.age}")
+    pdf.drawString(100, 610, f"Hydration Level: {current_athlete.hydration_level}")
+    pdf.drawString(100, 590, f"Muscle Mass: {current_athlete.muscle_mass}")
+    pdf.drawString(100, 570, f"Residence: {current_athlete.residence}")
+    pdf.drawString(100, 550, f"Gender: {current_athlete.gender}")
+
+    # Finalize the PDF
+    pdf.showPage()
+    pdf.save()
+
+    # Get the value of the BytesIO buffer and close the buffer
+    pdf_data = buffer.getvalue()
+    buffer.close()
+
+    # Send the response as a PDF download
+    headers = {
+        'Content-Disposition': 'attachment; filename="athlete_stats.pdf"'
+    }
+    return Response(content=pdf_data, media_type="application/pdf", headers=headers)
+
+# Trainer Dashboard Route endpoint 
+@router.get("/trainer/dashboard", response_class=HTMLResponse)
+async def trainer_dashboard(request: Request, db: Session = Depends(get_db)):
+    access_token = request.cookies.get("trainer_access_token")
+    
+    if not access_token:
+        raise HTTPException(status_code=401, detail="Unauthorized: No token found")
+  
+    try:
+        # Decode the JWT token from the cookie
+        payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
+        
+        # Extract the username and role from the token payload
+        username: str = payload.get("sub")
+        role: str = payload.get("role")
+        
+        # Ensure the role is "trainer"
+        if username is None or role != "trainer":
+            raise HTTPException(status_code=401, detail="Unauthorized")
+    
+    except JWTError as e:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+    # Fetch the current trainer's data based on the username from the token
+    trainer = db.query(Trainer).filter(Trainer.username == username).first()
+    if not trainer:
+        raise HTTPException(status_code=404, detail="Trainer not found")
+
+    # Fetch the list of athletes for the trainer to view and manage
+    athletes = db.query(Athlete).all()
+
+    # Render the trainer dashboard template with the trainer's and athletes' data
+    return templates.TemplateResponse("trainer_dashboard.html", {
+        "request": request,
+        "trainer": trainer,
+        "athletes": athletes
+    })
+
+# Route for trainers to view and update specific athlete information
+@router.get("/trainer/athlete/{athlete_id}", response_class=HTMLResponse)
+async def view_athlete(
+    athlete_id: int, 
+    request: Request, 
+    db: Session = Depends(get_db), 
+    current_trainer: Trainer = Depends(get_current_trainer)
+):
+    # Fetch the athlete by ID
+    athlete = db.query(Athlete).filter(Athlete.id == athlete_id).first()
+
+    if not athlete:
+        raise HTTPException(status_code=404, detail="Athlete not found")
+
+    # Return the template for viewing/updating athlete information
+    return templates.TemplateResponse("view_athlete.html", {
+        "request": request,
+        "athlete": athlete
+    })
+
+
+# Route for handling the update logic
+@router.post("/trainer/athlete/{athlete_id}/update")
+async def update_athlete(athlete_id: int, first_name: str = Form(...), last_name: str = Form(...), email: str = Form(...), body_weight: float = Form(...), db: Session = Depends(get_db), current_trainer: Trainer = Depends(get_current_trainer)):
+    # Fetch the athlete by ID
+    athlete = db.query(Athlete).filter(Athlete.id == athlete_id).first()
+
+    if not athlete:
+        raise HTTPException(status_code=404, detail="Athlete not found")
+
+    # Update athlete's information
+    athlete.first_name = first_name
+    athlete.last_name = last_name
+    athlete.email = email
+    athlete.body_weight = body_weight
+
+    # Commit changes to the database
+    db.commit()
+
+    # Redirect back to the trainer dashboard after update
+    return RedirectResponse(url="/trainer/dashboard", status_code=302)
