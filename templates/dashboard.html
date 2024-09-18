@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Athlete Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table th, table td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+        }
+
+        table th {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .button {
+            padding: 10px 15px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .button:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Athlete Dashboard</h2>
+        <table>
+            <tr>
+                <th>Attribute</th>
+                <th>Value</th>
+            </tr>
+            <tr>
+                <td>First Name</td>
+                <td>{{ athlete.first_name }}</td>
+            </tr>
+            <tr>
+                <td>Last Name</td>
+                <td>{{ athlete.last_name }}</td>
+            </tr>
+            <tr>
+                <td>Date of Birth</td>
+                <td>{{ athlete.date_of_birth }}</td>
+            </tr>
+            <tr>
+                <td>Email</td>
+                <td>{{ athlete.email }}</td>
+            </tr>
+            <tr>
+                <td>Body Weight</td>
+                <td>{{ athlete.body_weight }}</td>
+            </tr>
+            <tr>
+                <td>BMR</td>
+                <td>{{ athlete.bmr }}</td>
+            </tr>
+            <tr>
+                <td>Age</td>
+                <td>{{ athlete.age }}</td>
+            </tr>
+            <tr>
+                <td>Hydration Level</td>
+                <td>{{ athlete.hydration_level }}</td>
+            </tr>
+            <tr>
+                <td>Muscle Mass</td>
+                <td>{{ athlete.muscle_mass }}</td>
+            </tr>
+            <tr>
+                <td>Residence</td>
+                <td>{{ athlete.residence }}</td>
+            </tr>
+            <tr>
+                <td>Gender</td>
+                <td>{{ athlete.gender }}</td>
+            </tr>
+        </table>
+        <br>
+        <button class="button" onclick="window.location.href='/download-stats'">Download Stats</button>
+    </div>
+</body>
+</html>
