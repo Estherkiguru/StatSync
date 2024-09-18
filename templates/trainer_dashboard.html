@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trainer Dashboard</title>
+</head>
+<body>
+    <h1>Welcome, {{ trainer.first_name }} {{ trainer.last_name }}</h1>
+
+    <h2>Your Athletes</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Email</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for athlete in athletes %}
+            <tr>
+                <td>{{ athlete.first_name }}</td>
+                <td>{{ athlete.last_name }}</td>
+                <td>{{ athlete.email }}</td>
+                <td>
+                    <!-- Link to view or update athlete's information -->
+                    <a href="/trainer/athlete/{{ athlete.id }}">View/Update</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</body>
+</html>
