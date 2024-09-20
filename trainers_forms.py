@@ -9,10 +9,14 @@ class TrainerSignUpForm(BaseModel):
     last_name: str
     gender: str
     email: EmailStr
+    username: str
     password: str
     confirm_password: str
-    username: str
     date_of_birth: date
+    specialties: Optional[str] = None 
+    experience: Optional[str] = None  
+    contact_number: Optional[str] = None  
+    photo: Optional[str] = None 
 
     @classmethod
     def as_form(
@@ -24,7 +28,11 @@ class TrainerSignUpForm(BaseModel):
         password: str = Form(...),
         confirm_password: str = Form(...),
         username: str = Form(...),
-        date_of_birth: date = Form(...)
+        date_of_birth: date = Form(...),
+        specialties: Optional[str] = Form(None),  
+        experience: Optional[str] = Form(None),  
+        contact_number: Optional[str] = Form(None),  
+        photo: Optional[str] = Form(None) 
     ) -> 'TrainerSignUpForm':
         form = cls(
             first_name=first_name,
@@ -34,7 +42,11 @@ class TrainerSignUpForm(BaseModel):
             password=password,
             confirm_password=confirm_password,
             username=username,
-            date_of_birth=date_of_birth
+            date_of_birth=date_of_birth,
+            specialties=specialties,
+            experience=experience,
+            contact_number=contact_number,
+            photo=photo
         )
 
         # Add validation to ensure passwords match
