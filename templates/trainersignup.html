@@ -34,7 +34,7 @@
             flex-direction: column;
         }
 
-        input, select {
+        input, select, textarea {
             padding: 12px;
             margin-bottom: 20px;
             border: 1px solid #ccc;
@@ -74,7 +74,7 @@
 <body>
     <div class="container">
         <h2>Trainer SignUp</h2>
-        <form method="post" action="/signup">
+        <form method="post" action="/trainer/signup">
             <input type="text" name="first_name" placeholder="First Name" required>
             <input type="text" name="last_name" placeholder="Last Name" required>
             <select name="gender" required>
@@ -83,10 +83,16 @@
                 <option value="female">Female</option>
                 <option value="other">Other</option>
             </select>
+            <input type="date" name="date_of_birth" placeholder="Date of Birth" required>
             <input type="text" name="username" placeholder="Username" required>
             <input type="email" name="email" placeholder="Email" required>
             <input type="password" name="password" placeholder="Password" required>
             <input type="password" name="confirm_password" placeholder="Confirm Password" required>
+            <textarea name="specialties" placeholder="Specialties (Optional)"></textarea>
+            <textarea name="experience" placeholder="Experience (Optional)"></textarea>
+            <input type="tel" name="contact_number" placeholder="Contact Number (Optional)">
+            <input type="file" name="photo" placeholder="Photo (Optional)">
+
             <button type="submit">Sign Up</button>
         </form>
 
