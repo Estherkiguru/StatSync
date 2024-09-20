@@ -4,6 +4,86 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Update Athlete Information</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f4f7;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #3498db;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        label {
+            font-size: 14px;
+            color: #333;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="number"],
+        textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        button {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            display: block;
+            width: 100%;
+            text-align: center;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+    </style>
 </head>
 <body>
     <h1>Update Information for {{ athlete.first_name }} {{ athlete.last_name }}</h1>
@@ -20,6 +100,33 @@
 
         <label for="body_weight">Body Weight:</label>
         <input type="number" id="body_weight" name="body_weight" value="{{ athlete.body_weight }}" required><br><br>
+        
+        <label for="bmr">BMR (Basal Metabolic Rate):</label>
+        <input type="number" id="bmr" name="bmr" value="{{ athlete.bmr }}" step="0.01"><br><br>
+
+        <label for="hydration_level">Hydration Level:</label>
+        <input type="number" id="hydration_level" name="hydration_level" value="{{ athlete.hydration_level }}" step="0.01"><br><br>
+
+        <label for="muscle_mass">Muscle Mass:</label>
+        <input type="number" id="muscle_mass" name="muscle_mass" value="{{ athlete.muscle_mass }}" step="0.01"><br><br>
+
+        <label for="injury_history">Injury History:</label>
+        <textarea id="injury_history" name="injury_history" rows="4">{{ athlete.injury_history }}</textarea><br><br>
+
+        <label for="medical_condition">Medical Condition:</label>
+        <textarea id="medical_condition" name="medical_condition" rows="4">{{ athlete.medical_condition }}</textarea><br><br>
+
+        <label for="allergies">Allergies:</label>
+        <textarea id="allergies" name="allergies" rows="4">{{ athlete.allergies }}</textarea><br><br>
+
+        <label for="sports_playing">Sports Playing:</label>
+        <input type="text" id="sports_playing" name="sports_playing" value="{{ athlete.sports_playing }}" required><br><br>
+
+        <label for="position">Position:</label>
+        <input type="text" id="position" name="position" value="{{ athlete.position }}" required><br><br>
+
+        <label for="training_goal">Training Goal:</label>
+        <textarea id="training_goal" name="training_goal" rows="4">{{ athlete.training_goal }}</textarea><br><br>
 
         <button type="submit">Update Athlete</button>
     </form>
