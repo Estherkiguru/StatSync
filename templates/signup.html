@@ -73,7 +73,7 @@
 </head>
 <body>
     <div class="container">
-        <h2>Sign Up - StatSync</h2>
+        <h2>Sign Up</h2>
         <form method="post" action="/signup">
             <input type="text" name="first_name" placeholder="First Name" required>
             <input type="text" name="last_name" placeholder="Last Name" required>
@@ -85,13 +85,23 @@
             </select>
             <input type="number" name="age" placeholder="Age" required>
             <input type="date" name="date_of_birth" placeholder="Date of Birth" required>
-            <input type="text" name="residence" placeholder="Residence" required>
-            <input type="text" name="username" placeholder="Username" required>
+            <input type="text" name="address" placeholder="Address" required> <!-- Changed Address to address -->
             <input type="email" name="email" placeholder="Email" required>
+            <input type="tel" name="contact_number" placeholder="Contact Number" required> <!-- contact_number added -->
+            <input type="text" name="emergency_contact" placeholder="Emergency Contact Name" required> <!-- emergency_contact added -->
+            <input type="tel" name="emergency_contact_number" placeholder="Emergency Contact Number" required> <!-- emergency_contact_number added -->
+            <input type="text" name="sports_playing" placeholder="Sports Playing" required>
+            <input type="text" name="position" placeholder="Position in Sport" required>
+            <input type="text" name="username" placeholder="Username" required>
             <input type="password" name="password" placeholder="Password" required>
             <input type="password" name="confirm_password" placeholder="Confirm Password" required>
+            <input type="text" name="medical_condition" placeholder="Medical Condition (if any)">
+            <input type="text" name="allergies" placeholder="Allergies (if any)">
+            <input type="date" name="registration_date" required>
+        
             <button type="submit">Sign Up</button>
         </form>
+        
 
         <hr>
 
