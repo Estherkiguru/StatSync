@@ -17,6 +17,7 @@ StatSync.mount("/static", StaticFiles(directory="static"), name="static")
 # Include the API router with the routes
 StatSync.include_router(api_router)
 
+
 # Create the database tables
 Base.metadata.create_all(bind=engine)
 
