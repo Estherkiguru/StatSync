@@ -6,6 +6,9 @@ from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from sqlalchemy.orm import Session
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
+from reportlab.lib import colors
+from reportlab.lib.units import inch
+from reportlab.pdfgen import canvas
 from io import BytesIO
 from db import get_db
 from forms import LoginForm, SignUpForm
@@ -13,10 +16,10 @@ from fastapi.responses import JSONResponse
 from models import Athlete, Trainer
 from bcrypt import hashpw, gensalt
 from fastapi.templating import Jinja2Templates
-from datetime import timedelta, date
+from datetime import date
 from trainers_forms import TrainerSignUpForm, TrainerLoginForm
 from auth import SECRET_KEY, ALGORITHM, authenticate_user, create_access_token, get_current_user, get_current_athlete, get_current_trainer
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from typing import Optional
 from jose import jwt, JWTError
 from config import settings 
@@ -66,20 +69,7 @@ async def login(response: Response, request: Request, form_data: LoginForm = Dep
 # Route for the signup page
 @router.get("/signup", response_class=HTMLResponse)
 async def signup_page(request: Request):
-    # Create an empty form instance with default values
-    signup_form = SignUpForm(
-        first_name='',
-        last_name='',
-        gender='',
-        age=0,
-        date_of_birth=date.today(),
-        residence='',
-        username='',
-        email='example@example.com',
-        password='',
-        confirm_password=''
-    )
-    return templates.TemplateResponse("signup.html", {"request": request, "signup_form": signup_form})
+    return templates.TemplateResponse("signup.html", {"request": request})
    
 # Signup endpoint for a new athlete
 @router.post('/signup')
@@ -114,10 +104,25 @@ async def signup(request: Request, form_data: SignUpForm = Depends(SignUpForm.as
         gender=form_data.gender,
         age=form_data.age,
         date_of_birth=form_data.date_of_birth,
-        residence=form_data.residence,
+        address=form_data.address,
         username=form_data.username,
         email=form_data.email,
-        password=hashed_password.decode()
+        password=hashed_password.decode(),
+        body_weight=form_data.body_weight,
+        Height=form_data.height,
+        bmr=form_data.bmr,
+        hydration_level=form_data.hydration_level,
+        muscle_mass=form_data.muscle_mass,
+        injury_history=form_data.injury_history,
+        medical_condition=form_data.medical_condition,
+        allergies=form_data.allergies,
+        sports_playing=form_data.sports_playing,
+        position=form_data.position,
+        contact_number=form_data.contact_number,
+        emergency_contact=form_data.emergency_contact,
+        emergency_contact_number=form_data.emergency_contact_number,
+        training_goal=form_data.training_goal,
+        registration_date=date.today()
     )
 
     db.add(new_athlete)
@@ -126,6 +131,14 @@ async def signup(request: Request, form_data: SignUpForm = Depends(SignUpForm.as
 
     # Redirect to login page after successful signup
     return RedirectResponse(url="/login", status_code=302)
+
+# Logout route for athletes
+@router.get("/athlete/logout")
+async def logout_athlete(response: Response):
+    # Remove the athlete's JWT token 
+    response = RedirectResponse(url="/", status_code=302)
+    response.delete_cookie(key="athlete_access_token")
+    return response
 
 # Route for the Trainer login page
 @router.get("/trainer/login", response_class=HTMLResponse)
@@ -156,24 +169,13 @@ async def trainer_login(request: Request, response = Response, form_data: Traine
         samesite="Lax",
         secure=False 
     )
-    # Redirect to the trainers dashboard after successful login
+    # Redirect to the athletes dashboard after successful login
     return response
 
 # Route for the Trainer signup page
 @router.get("/trainer/signup", response_class=HTMLResponse)
 async def trainer_signup_page(request: Request):
-    # Create an empty form instance with default values
-    signup_form = TrainerSignUpForm(
-        first_name='',
-        last_name='',
-        gender='',
-        date_of_birth=date.today(),
-        username='',
-        email='example@example.com',
-        password='',
-        confirm_password=''
-    )
-    return templates.TemplateResponse("trainersignup.html", {"request": request, "signup_form": signup_form})
+    return templates.TemplateResponse("trainersignup.html", {"request": request})
   
 # Signup endpoint for a new trainer
 @router.post('/trainer/signup')
@@ -209,7 +211,12 @@ async def trainer_signup(request: Request, form_data: TrainerSignUpForm = Depend
         date_of_birth=form_data.date_of_birth,
         username=form_data.username,
         email=form_data.email,
-        password=hashed_password.decode()
+        password=hashed_password.decode(),
+        specialties=form_data.specialties,  
+        experience=form_data.experience,
+        contact_number=form_data.contact_number,
+        registration_date=date.today(),
+        photo=form_data.photo
     )
 
     db.add(new_trainer)
@@ -218,6 +225,13 @@ async def trainer_signup(request: Request, form_data: TrainerSignUpForm = Depend
 
     # Redirect to login page after successful signup
     return RedirectResponse(url="/trainer/login", status_code=302)
+
+@router.get("/trainer/logout")
+async def logout_trainer(response: Response):
+    # Remove the trainer's JWT token
+    response = RedirectResponse(url="/", status_code=302)
+    response.delete_cookie(key="trainer_access_token")
+    return response
 
 # Endpoint for trainers to view a list of athletes data
 @router.get("/athletes", response_class=JSONResponse)
@@ -363,34 +377,68 @@ async def athlete_dashboard(request: Request, db: Session = Depends(get_db)):
 
 @router.get("/download-stats", response_class=Response)
 async def download_stats(request: Request, db: Session = Depends(get_db), current_athlete: Athlete = Depends(get_current_athlete)):
+    athlete = db.query(Athlete).filter(Athlete.id == current_athlete.id).first() 
     # Create a PDF buffer in memory
     buffer = BytesIO()
 
     # Create the PDF object, using the buffer as its "file."
     pdf = canvas.Canvas(buffer, pagesize=letter)
 
-    # Write content on the PDF
-    pdf.drawString(100, 750, f"First Name: {current_athlete.first_name}")
-    pdf.drawString(100, 730, f"Last Name: {current_athlete.last_name}")
-    pdf.drawString(100, 710, f"Date of Birth: {current_athlete.date_of_birth}")
-    pdf.drawString(100, 690, f"Email: {current_athlete.email}")
-    pdf.drawString(100, 670, f"Body Weight: {current_athlete.body_weight}")
-    pdf.drawString(100, 650, f"BMR: {current_athlete.bmr}")
-    pdf.drawString(100, 630, f"Age: {current_athlete.age}")
-    pdf.drawString(100, 610, f"Hydration Level: {current_athlete.hydration_level}")
-    pdf.drawString(100, 590, f"Muscle Mass: {current_athlete.muscle_mass}")
-    pdf.drawString(100, 570, f"Residence: {current_athlete.residence}")
-    pdf.drawString(100, 550, f"Gender: {current_athlete.gender}")
+    # Set title and general formatting
+    pdf.setTitle("Athlete Stats")
+    pdf.setFont("Helvetica-Bold", 16)
+    pdf.drawString(200, 750, "Athlete Stats Summary")
 
+    pdf.line(50, 740, 550, 740)
+    pdf.setFont("Helvetica", 12)
+    y = 710
+
+     # Define a list of all attributes and their corresponding labels
+    attributes = [
+        ("First Name", athlete.first_name),
+        ("Last Name", athlete.last_name),
+        ("Date of Birth", athlete.date_of_birth),
+        ("Age", athlete.age),
+        ("Gender", athlete.gender),
+        ("Address", athlete.address or "Not Set"),
+        ("Contact Number", athlete.contact_number or "Not Set"),
+        ("Emergency Contact", athlete.emergency_contact or "Not Set"),
+        ("Emergency Contact Number", athlete.emergency_contact_number or "Not Set"),
+        ("Sports Playing", athlete.sports_playing or "Not Set"),
+        ("Position", athlete.position or "Not Set"),
+        ("Email", athlete.email),
+        ("Body Weight", athlete.body_weight or "Not Set"),
+        ("BMR", athlete.bmr or "Not Set"),
+        ("Hydration Level", athlete.hydration_level or "Not Set"),
+        ("Muscle Mass", athlete.muscle_mass or "Not Set"),
+        ("Injury History", athlete.injury_history or "None"),
+        ("Medical Condition", athlete.medical_condition or "None"),
+        ("Allergies", athlete.allergies or "None"),
+        ("Training Goal", athlete.training_goal or "Not Set"),
+    ]
+
+    # Loop through each attribute and print it in the PDF
+    for label, value in attributes:
+        pdf.drawString(100, y, f"{label}: {value}")
+        y -= 20  # Move down for the next line
+        if y < 100:  # If the page is full, add a new page
+            pdf.showPage()
+            pdf.setFont("Helvetica", 12)
+            y = 750  # Reset y-coordinate
+
+    # Adding a footer
+    pdf.setFont("Helvetica-Oblique", 10)
+    pdf.drawString(250, 50, "Generated by StatSync")
+    
     # Finalize the PDF
     pdf.showPage()
     pdf.save()
 
-    # Get the value of the BytesIO buffer and close the buffer
+    # Get the PDF data from the buffer
     pdf_data = buffer.getvalue()
     buffer.close()
 
-    # Send the response as a PDF download
+    # Return the PDF as a downloadable file
     headers = {
         'Content-Disposition': 'attachment; filename="athlete_stats.pdf"'
     }
@@ -398,7 +446,7 @@ async def download_stats(request: Request, db: Session = Depends(get_db), curren
 
 # Trainer Dashboard Route endpoint 
 @router.get("/trainer/dashboard", response_class=HTMLResponse)
-async def trainer_dashboard(request: Request, db: Session = Depends(get_db)):
+async def trainer_dashboard(request: Request, db: Session = Depends(get_db), current_trainer = Depends(get_current_trainer)):
     access_token = request.cookies.get("trainer_access_token")
     
     if not access_token:
@@ -430,7 +478,7 @@ async def trainer_dashboard(request: Request, db: Session = Depends(get_db)):
     # Render the trainer dashboard template with the trainer's and athletes' data
     return templates.TemplateResponse("trainer_dashboard.html", {
         "request": request,
-        "trainer": trainer,
+        "trainer": current_trainer,
         "athletes": athletes
     })
 
@@ -454,10 +502,27 @@ async def view_athlete(
         "athlete": athlete
     })
 
-
 # Route for handling the update logic
 @router.post("/trainer/athlete/{athlete_id}/update")
-async def update_athlete(athlete_id: int, first_name: str = Form(...), last_name: str = Form(...), email: str = Form(...), body_weight: float = Form(...), db: Session = Depends(get_db), current_trainer: Trainer = Depends(get_current_trainer)):
+async def update_athlete(
+    athlete_id: int,
+    first_name: str = Form(...),
+    last_name: str = Form(...),
+    email: str = Form(...),
+    body_weight: float = Form(None),
+    bmr: float = Form(None),
+    hydration_level: float = Form(None),
+    muscle_mass: float = Form(None),
+    injury_history: str = Form(None),
+    medical_condition: str = Form(None),
+    allergies: str = Form(None),
+    sports_playing: str = Form(None),
+    position: str = Form(None),
+    training_goal: str = Form(None),
+    db: Session = Depends(get_db),
+    current_trainer = Depends(get_current_trainer)
+):
+    print("POST request received for athlete:", athlete_id)  
     # Fetch the athlete by ID
     athlete = db.query(Athlete).filter(Athlete.id == athlete_id).first()
 
@@ -469,9 +534,39 @@ async def update_athlete(athlete_id: int, first_name: str = Form(...), last_name
     athlete.last_name = last_name
     athlete.email = email
     athlete.body_weight = body_weight
+    athlete.bmr = bmr
+    athlete.hydration_level = hydration_level
+    athlete.muscle_mass = muscle_mass
+    athlete.injury_history = injury_history
+    athlete.medical_condition = medical_condition
+    athlete.allergies = allergies
+    athlete.sports_playing = sports_playing
+    athlete.position = position
+    athlete.training_goal = training_goal
 
     # Commit changes to the database
     db.commit()
 
-    # Redirect back to the trainer dashboard after update
+    # Redirect back to the trainer's dashboard after the update
+    return RedirectResponse(url="/trainer/dashboard", status_code=302)
+
+# Delete endpoint for trainers to delete an athlete
+@router.post("/trainer/athlete/{athlete_id}/delete")
+async def delete_athlete(
+    athlete_id: int,
+    db: Session = Depends(get_db),
+    current_trainer: Trainer = Depends(get_current_trainer)
+):
+    # Fetch the athlete by ID
+    athlete = db.query(Athlete).filter(Athlete.id == athlete_id).first()
+
+    # Check if the athlete exists
+    if not athlete:
+        raise HTTPException(status_code=404, detail="Athlete not found")
+
+    # Delete the athlete from the database
+    db.delete(athlete)
+    db.commit()
+
+    # Redirect back to the trainer's dashboard after deletion
     return RedirectResponse(url="/trainer/dashboard", status_code=302)
