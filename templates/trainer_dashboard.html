@@ -4,34 +4,135 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trainer Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f7f7;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative; 
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        table th, table td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+        }
+
+        table th {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .button {
+            padding: 10px 15px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .button:hover {
+            background-color: #2980b9;
+        }
+
+        .delete-button {
+            background-color: #e74c3c;
+        }
+
+        .delete-button:hover {
+            background-color: #c0392b;
+        }
+
+        .logout-button {
+            background-color: #e74c3c;
+        }
+
+        .logout-button:hover {
+            background-color: #c0392b;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px; 
+        }
+    </style>
+    <script>
+        function deleteAthlete(athleteId) {
+            if (confirm('Are you sure you want to delete this athlete?')) {
+                fetch(`/trainer/athlete/${athleteId}/delete`, {
+                    method: 'POST',  
+                }).then(response => {
+                    if (response.ok) {
+                        window.location.href = '/trainer/dashboard';
+                    } else {
+                        alert('Failed to delete athlete.');
+                    }
+                });
+            }
+        }
+    </script>
 </head>
 <body>
-    <h1>Welcome, {{ trainer.first_name }} {{ trainer.last_name }}</h1>
+    <div class="container">
+        <h1>Welcome, {{ trainer.first_name }} {{ trainer.last_name }}</h1>
 
-    <h2>Your Athletes</h2>
-    <table border="1">
-        <thead>
-            <tr>
-                <th>First Name</th>
-                <th>Last Name</th>
-                <th>Email</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for athlete in athletes %}
-            <tr>
-                <td>{{ athlete.first_name }}</td>
-                <td>{{ athlete.last_name }}</td>
-                <td>{{ athlete.email }}</td>
-                <td>
-                    <!-- Link to view or update athlete's information -->
-                    <a href="/trainer/athlete/{{ athlete.id }}">View/Update</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+        <h2>Your Athletes</h2>
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Email</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for athlete in athletes %}
+                <tr>
+                    <td>{{ athlete.first_name }}</td>
+                    <td>{{ athlete.last_name }}</td>
+                    <td>{{ athlete.email }}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <a href="/trainer/athlete/{{ athlete.id }}" class="button">Update</a>
 
+                            <button class="button delete-button" onclick="deleteAthlete({{ athlete.id }})">Delete</button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="button-container">
+            <button class="button logout-button left" onclick="window.location.href='/trainer/logout'">Logout</button>
+        </div>
+    </div>
 </body>
 </html>
