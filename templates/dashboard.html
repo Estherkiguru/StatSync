@@ -52,10 +52,31 @@
             text-align: center;
             cursor: pointer;
         }
+        .logout-button {
+            background-color: #e74c3c;
+        }
 
+        .logout-button:hover {
+            background-color: #c0392b;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        
+        .button-container .left {
+            margin-right: auto;
+        }
+        
+        .button-container .right {
+            margin-left: auto;
+        }
         .button:hover {
             background-color: #2980b9;
         }
+
     </style>
 </head>
 <body>
@@ -79,20 +100,56 @@
                 <td>{{ athlete.date_of_birth }}</td>
             </tr>
             <tr>
+                <td>Age</td>
+                <td>{{ athlete.age }}</td>
+            </tr>
+            <tr>
+                <td>Gender</td>
+                <td>{{ athlete.gender }}</td>
+            </tr>
+            <tr>
+                <td>Address</td>
+                <td>{{ athlete.address }}</td>
+            </tr>
+            <tr>
+                <td>Username</td>
+                <td>{{ athlete.username }}</td>
+            </tr>
+            <tr>
                 <td>Email</td>
                 <td>{{ athlete.email }}</td>
+            </tr>
+            <tr>
+                <td>Contact Number</td>
+                <td>{{ athlete.contact_number }}</td>
+            </tr>
+            <tr>
+                <td>Emergency Contact</td>
+                <td>{{ athlete.emergency_contact }}</td>
+            </tr>
+            <tr>
+                <td>Emergency Contact Number</td>
+                <td>{{ athlete.emergency_contact_number }}</td>
+            </tr>
+            <tr>
+                <td>Sports Playing</td>
+                <td>{{ athlete.sports_playing }}</td>
+            </tr>
+            <tr>
+                <td>Position</td>
+                <td>{{ athlete.position }}</td>
             </tr>
             <tr>
                 <td>Body Weight</td>
                 <td>{{ athlete.body_weight }}</td>
             </tr>
             <tr>
-                <td>BMR</td>
-                <td>{{ athlete.bmr }}</td>
+                <td>Height</td>
+                <td>{{ athlete.height }}</td>
             </tr>
             <tr>
-                <td>Age</td>
-                <td>{{ athlete.age }}</td>
+                <td>BMR</td>
+                <td>{{ athlete.bmr }}</td>
             </tr>
             <tr>
                 <td>Hydration Level</td>
@@ -103,16 +160,27 @@
                 <td>{{ athlete.muscle_mass }}</td>
             </tr>
             <tr>
-                <td>Residence</td>
-                <td>{{ athlete.residence }}</td>
+                <td>Injury History</td>
+                <td>{{ athlete.injury_history }}</td>
             </tr>
             <tr>
-                <td>Gender</td>
-                <td>{{ athlete.gender }}</td>
+                <td>Medical Condition</td>
+                <td>{{ athlete.medical_condition }}</td>
+            </tr>
+            <tr>
+                <td>Allergies</td>
+                <td>{{ athlete.allergies }}</td>
+            </tr>
+            <tr>
+                <td>Training Goal</td>
+                <td>{{ athlete.training_goal }}</td>
             </tr>
         </table>
-        <br>
-        <button class="button" onclick="window.location.href='/download-stats'">Download Stats</button>
+        <br> 
+        <div class="button-container">
+            <button class="button left" onclick="window.location.href='/download-stats'">Download Stats</button>
+            <button class="button logout-button right" onclick="window.location.href='/athlete/logout'">Logout</button>
+        </div>
     </div>
 </body>
 </html>
